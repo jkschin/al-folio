@@ -80,9 +80,7 @@ let initTheme = (theme) => {
     }
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    setTheme(theme);
-  });
+  setTheme(theme);
 };
 
 initTheme(localStorage.getItem("theme"));
