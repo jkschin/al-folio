@@ -3,27 +3,32 @@
 # Exit if any subcommand fails
 set -e
 
-# Save current branch
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-
 # Build the site
 bundle exec jekyll build
 
-# Switch to the gh-pages branch
-git checkout gh-pages
+# Save current branch
+current_branch=$(git rev-parse --abbrev-ref HEAD)
 
-# Remove all files under version control
-git rm -rf .
+# Force delete the gh-pages branch both locally and remotely
+git branch -D gh-pages
 
-touch .nojekyll
+# Create a new gh-pages branch from master
+git checkout -b gh-pages
 
-# Copy the built site over
-cp -r ../_site/* .
+# Copy the built site to the root of the new branch
+cp -r _site/* .
 
-# Add, commit, and push the changes
+# Add all the changes
 git add --all
+
+# Commit the changes
 git commit -m "Deploy site to gh-pages"
-git push origin gh-pages
+
+# Add the remote origin if it's not already added
+git remote add origin git@github.com:jkschin/jkschin.github.io.git || true
+
+# Force push the gh-pages branch to the remote repository
+git push -f origin gh-pages
 
 # Switch back to the original branch
 git checkout $current_branch
