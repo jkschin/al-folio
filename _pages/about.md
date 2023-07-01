@@ -21,7 +21,7 @@ selected_papers: False # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 ---
 
-I am a PhD student at MIT.
+I am a Year 3 PhD student at MIT.
 My research interests are in applying machine learning to routing problems.
 Previously, I worked at Palantir as a software engineer.
 I have experience with large scale data integration and analysis and machine learning.
