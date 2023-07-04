@@ -9,6 +9,10 @@ category: work
 
 _\* indicates textbooks that are read end-to-end where possible._
 
+Books on my to read list, that I hope to get to at some point:
+
+- [Distributional Reinforcement Learning](https://mitpress.mit.edu/9780262048019/distributional-reinforcement-learning/)
+
 ## 2023
 
 - **\*Networks: An Introduction \| Mark Newman**
