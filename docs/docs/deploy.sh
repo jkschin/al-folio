@@ -6,7 +6,8 @@ set -e
 # Build the site
 bundle exec jekyll build
 
-mv _site docs
+rm -r docs/
+mv _site/ docs/
 
 # Add, commit, and push the changes
 git add --all
