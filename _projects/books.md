@@ -12,6 +12,7 @@ _\* indicates textbooks that are read end-to-end where possible._
 Books on my to read list, that I hope to get to at some point:
 
 - [Distributional Reinforcement Learning](https://mitpress.mit.edu/9780262048019/distributional-reinforcement-learning/)
+- [The Price of Time](https://www.amazon.com/Price-Time-Real-Story-Interest/dp/0802160069)
 
 ## 2023
 
