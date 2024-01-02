@@ -18,6 +18,8 @@ Books on my to read list, that I hope to get to at some point:
 
 - **\*Networks: An Introduction \| Mark Newman**
 - **June 2023 \| The Power of Habit \| Charles Duhigg**
+- **December 2023 \| The Two Lost Mountains \| Matthew Reilly**
+- **December 2023 \| The One Impossible Labyrinth \| Matthew Reilly**
 
 ## 2022
 
