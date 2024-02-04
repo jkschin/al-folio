@@ -3,7 +3,8 @@ layout: post
 title: PhD Reflection (and hopefully advice to prospective students)
 date: 2024-01-29 11:59:00-0400
 description:
-categories: personal
+tags: personal
+categories:
 disqus_comments: false
 related_posts: false
 toc:

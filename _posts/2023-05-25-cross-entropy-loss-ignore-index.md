@@ -3,7 +3,8 @@ layout: post
 title: Intricacies of nn.CrossEntropyLoss Ignore Index and Gradients
 date: 2023-05-25 11:59:00-0400
 description: A deep dive into ignore index and how it affects the gradients.
-categories: code
+tags: code
+categories:
 disqus_comments: false
 related_posts: false
 toc:
