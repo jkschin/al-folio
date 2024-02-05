@@ -5,7 +5,7 @@ date: 2023-05-25 11:59:00-0400
 description: A deep dive into ignore index and how it affects the gradients.
 tags: code
 categories:
-disqus_comments: false
+disqus_comments: true
 related_posts: false
 toc:
   sidebar: left

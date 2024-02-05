@@ -5,7 +5,7 @@ date: 2024-01-29 11:59:00-0400
 description:
 tags: personal
 categories:
-disqus_comments: false
+disqus_comments: true
 related_posts: false
 toc:
   sidebar: left
