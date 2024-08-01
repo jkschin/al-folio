@@ -1,5 +1,69 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en"><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="https://jkschin.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://jkschin.com/" rel="alternate" type="text/html" hreflang="en" /><updated>2024-02-04T23:06:27-05:00</updated><id>https://jkschin.com/feed.xml</id><title type="html">blank</title><subtitle>A simple, whitespace theme for academics. Based on [*folio](https://github.com/bogoli/-folio) design.
-</subtitle><entry><title type="html">Hypothesis Driven Mindset and First Principles Thinking</title><link href="https://jkschin.com/blog/2024/thinking-styles/" rel="alternate" type="text/html" title="Hypothesis Driven Mindset and First Principles Thinking" /><published>2024-02-04T10:59:00-05:00</published><updated>2024-02-04T10:59:00-05:00</updated><id>https://jkschin.com/blog/2024/thinking-styles</id><content type="html" xml:base="https://jkschin.com/blog/2024/thinking-styles/"><![CDATA[<h2 id="introduction">Introduction</h2>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://jkschin.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://jkschin.com/" rel="alternate" type="text/html" hreflang="en" /><updated>2024-08-01T14:01:24-04:00</updated><id>https://jkschin.com/feed.xml</id><title type="html">blank</title><subtitle>A simple, whitespace theme for academics. Based on [*folio](https://github.com/bogoli/-folio) design.
+</subtitle><entry><title type="html">Deciphering src_key_padding_mask</title><link href="https://jkschin.com/blog/2024/src-key-padding-mask/" rel="alternate" type="text/html" title="Deciphering src_key_padding_mask" /><published>2024-08-01T11:59:00-04:00</published><updated>2024-08-01T11:59:00-04:00</updated><id>https://jkschin.com/blog/2024/src-key-padding-mask</id><content type="html" xml:base="https://jkschin.com/blog/2024/src-key-padding-mask/"><![CDATA[<h2 id="introduction">Introduction</h2>
+
+<p>How do you know your ML model is learning correctly?
+After all, given enough capacity, it could probably fit any input you give it.
+You can have a low loss and decently correct outputs, but is your model actually correct?
+I was checking my code recently and decided to dive deep into how <code class="language-plaintext highlighter-rouge">src_key_padding_mask</code> in PyTorch Transformers work and check if my outputs are actually correct.</p>
+
+<h2 id="padding-in-transformers">Padding in Transformers</h2>
+
+<p>In most Transformer models, padding is necessary as your inputs may have a different size.
+For example, a given sentence could be 100 tokens long, but another sentence is 101 tokens long.
+For efficient batch training, it is necessary to pad these inputs.
+Of course, one can argue that the additional padding would cause inefficiency, but that’s really a separate point for another day and in general you would still pad.</p>
+
+<p>In the code example below, we specifically test the <code class="language-plaintext highlighter-rouge">TransformerEncoder</code>.
+It is also relatively easy to think of a test that would convince us that it is doing the right thing.
+Consider an input of shape <code class="language-plaintext highlighter-rouge">(32, 10, 512)</code>, which represent the batch size, sequence length and dimension respectively.
+Further consider how perhaps only the first two tokens are relevant, and the other 8 are simply padded tokens.
+You would expect that this input, together with a correctly constructed <code class="language-plaintext highlighter-rouge">src_key_padding_mask</code> would yield a relevant output (<code class="language-plaintext highlighter-rouge">output[:, :2, :]</code>), with the other outputs being irrelevant (<code class="language-plaintext highlighter-rouge">output[:, 2:, :]</code>).
+Finally, if you put into this same Transformer <code class="language-plaintext highlighter-rouge">input[:, :2, :]</code>, the output should be identical to <code class="language-plaintext highlighter-rouge">output[:, :2, :]</code> <strong>with the</strong> <code class="language-plaintext highlighter-rouge">src_key_padding_mask</code>.
+Put simply, self-attention on the two relevant tokens is equivalent to self-attention on all ten tokens with the correct <code class="language-plaintext highlighter-rouge">src_key_padding_mask</code>.
+With this intuition, I worked with Google Gemini to generate some starter code to test this, and it’s correct!</p>
+
+<h2 id="code">Code</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">torch</span>
+<span class="kn">import</span> <span class="n">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+
+<span class="c1"># Test the model
+</span>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span> <span class="c1"># Create input data (bsz x seq_len x dim)
+</span>    <span class="n">bsz</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">512</span>
+    <span class="n">input_data</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="n">bsz</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+
+    <span class="c1"># Initialize model
+</span>    <span class="n">encoder_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">TransformerEncoderLayer</span><span class="p">(</span>
+        <span class="n">d_model</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+        <span class="n">nhead</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">batch_first</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>  <span class="c1"># (bsz, seq_len, dim) format
+</span>        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># ensures more determinism
+</span>    <span class="p">)</span>
+    <span class="n">transformer_encoder</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">TransformerEncoder</span><span class="p">(</span><span class="n">encoder_layer</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">pad_idx</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">9</span><span class="p">):</span>
+        <span class="c1"># Create the src_key_padding_mask
+</span>        <span class="n">src_key_padding_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">bsz</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">src_key_padding_mask</span><span class="p">[:,</span> <span class="n">pad_idx</span><span class="p">:]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">True</span>  <span class="c1"># True indices are the masked positions
+</span>        <span class="p">)</span>
+
+        <span class="c1"># Forward pass
+</span>        <span class="n">output</span> <span class="o">=</span> <span class="n">input_data</span>
+        <span class="n">trunc</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[:,</span> <span class="p">:</span><span class="n">pad_idx</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">for</span> <span class="n">layer_idx</span><span class="p">,</span> <span class="n">mod</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">transformer_encoder</span><span class="p">.</span><span class="n">layers</span><span class="p">):</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="nf">mod</span><span class="p">(</span>
+                <span class="n">output</span><span class="p">,</span> <span class="n">src_key_padding_mask</span><span class="o">=</span><span class="n">src_key_padding_mask</span>
+            <span class="p">)</span>  <span class="c1"># input data with src_key_padding_mask
+</span>            <span class="n">trunc</span> <span class="o">=</span> <span class="nf">mod</span><span class="p">(</span><span class="n">trunc</span><span class="p">)</span>  <span class="c1"># truncated relevant input data
+</span>
+        <span class="c1"># Observe how the truncated output is identical to the normal output with src_key_padding_mask
+</span>        <span class="c1"># indicating that the padding is correctly handled
+</span>        <span class="k">assert</span> <span class="n">torch</span><span class="p">.</span><span class="nf">all</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nf">isclose</span><span class="p">(</span><span class="n">trunc</span><span class="p">,</span> <span class="n">output</span><span class="p">[:,</span> <span class="p">:</span><span class="n">pad_idx</span><span class="p">,</span> <span class="p">:],</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-06</span><span class="p">))</span>
+
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">All test cases passed!</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>]]></content><author><name></name></author><category term="code" /><summary type="html"><![CDATA[A deep dive into src_key_padding_mask and how to check for correctness.]]></summary></entry><entry><title type="html">Hypothesis Driven Mindset and First Principles Thinking</title><link href="https://jkschin.com/blog/2024/thinking-styles/" rel="alternate" type="text/html" title="Hypothesis Driven Mindset and First Principles Thinking" /><published>2024-02-04T10:59:00-05:00</published><updated>2024-02-04T10:59:00-05:00</updated><id>https://jkschin.com/blog/2024/thinking-styles</id><content type="html" xml:base="https://jkschin.com/blog/2024/thinking-styles/"><![CDATA[<h2 id="introduction">Introduction</h2>
 
 <p>I’m working on a startup in MIT Sandbox and signed up for an expert session recently.
 As we were nearing the end of the call, I asked about the unknown unknowns when starting a company as these are risks that one has to be mitigate.
@@ -338,7 +402,7 @@ After computing the loss, we perform a backward pass and print the gradients:</p
 
 <span class="c1"># Print the loss
 </span>
-<span class="nf">print</span><span class="p">(</span><span class="s">"Loss:"</span><span class="p">,</span> <span class="n">loss</span><span class="p">.</span><span class="nf">item</span><span class="p">())</span>
+<span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Loss:</span><span class="sh">"</span><span class="p">,</span> <span class="n">loss</span><span class="p">.</span><span class="nf">item</span><span class="p">())</span>
 
 <span class="c1"># Perform the backward pass
 </span>
@@ -346,7 +410,7 @@ After computing the loss, we perform a backward pass and print the gradients:</p
 
 <span class="c1"># Print the gradients
 </span>
-<span class="nf">print</span><span class="p">(</span><span class="s">"Gradients:"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Gradients:</span><span class="sh">"</span><span class="p">)</span>
 <span class="nf">print</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">.</span><span class="n">grad</span><span class="p">)</span>
 </code></pre></div></div>
 
@@ -371,7 +435,7 @@ Specifically, this line was added <code class="language-plaintext highlighter-ro
 
 <span class="c1"># Define the input tensor and target tensor
 </span><span class="n">input_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-<span class="n">input_tensor</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nf">float</span><span class="p">(</span><span class="s">'-inf'</span><span class="p">)</span> <span class="c1"># Note this is added!
+<span class="n">input_tensor</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nf">float</span><span class="p">(</span><span class="sh">'</span><span class="s">-inf</span><span class="sh">'</span><span class="p">)</span> <span class="c1"># Note this is added!
 </span><span class="n">input_tensor</span><span class="p">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="bp">True</span>
 <span class="n">target_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># Assuming ignore_index is -1
 </span>
@@ -382,13 +446,13 @@ Specifically, this line was added <code class="language-plaintext highlighter-ro
 </span><span class="n">loss</span> <span class="o">=</span> <span class="nf">criterion</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">,</span> <span class="n">target_tensor</span><span class="p">)</span>
 
 <span class="c1"># Print the loss
-</span><span class="nf">print</span><span class="p">(</span><span class="s">"Loss:"</span><span class="p">,</span> <span class="n">loss</span><span class="p">.</span><span class="nf">item</span><span class="p">())</span>
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Loss:</span><span class="sh">"</span><span class="p">,</span> <span class="n">loss</span><span class="p">.</span><span class="nf">item</span><span class="p">())</span>
 
 <span class="c1"># Perform the backward pass
 </span><span class="n">loss</span><span class="p">.</span><span class="nf">backward</span><span class="p">()</span>
 
 <span class="c1"># Print the gradients
-</span><span class="nf">print</span><span class="p">(</span><span class="s">"Gradients:"</span><span class="p">)</span>
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Gradients:</span><span class="sh">"</span><span class="p">)</span>
 <span class="nf">print</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">.</span><span class="n">grad</span><span class="p">)</span>
 </code></pre></div></div>
 
